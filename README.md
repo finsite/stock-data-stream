@@ -1,99 +1,89 @@
-# 🧱 template_python
+# Stock Poller
 
-## Overview
+This repository implements a modular polling service that collects stock data from external APIs and pushes the results to a message queue for downstream processing.
 
-This repository provides a standardized template for building Python-based
-microservices and utilities. It includes preconfigured tooling for testing,
-linting, formatting, dependency management, Dockerization, and Kubernetes
-scaffolding.
+## ✅ Features
 
-Use this template to quickly bootstrap new repositories in the `stock-*`
-ecosystem or any production-grade Python project.
+- Pluggable poller system for various stock data providers
+- RabbitMQ and AWS SQS support via a unified queue interface
+- Vault integration for secure secret management
+- Environment-driven and Vault-overridable configuration
+- Configurable polling interval, rate limiting, and retry behavior
+- Structured logging with optional JSON output
+- Production-ready Docker and Kubernetes deployment
 
----
+## 🗂️ Project Structure
 
-## 🚀 Getting Started
+```
+src/
+├── app/
+│   ├── main.py                 # Main polling loop
+│   ├── config.py               # Per-repo overrides
+│   ├── config_shared.py        # Shared Vault/ENV logic
+│   ├── poller_factory.py       # Instantiates appropriate poller
+│   ├── queue_sender.py         # Sends to RabbitMQ/SQS
+│   ├── pollers/                # Source-specific pollers
+│   └── utils/
+│       ├── rate_limit.py       # Token bucket rate limiter
+│       ├── setup_logger.py     # Logging setup
+│       ├── types.py            # Shared types and enums
+│       └── vault_client.py     # Vault AppRole client
+```
 
-### Prerequisites
-
-- Python 3.9 or higher
-- `make`
-- `pip` and `pip-tools`
-- Optional: Docker, kubectl, and helm (for deployment)
-
-### 🔧 Setup
+## 🛠️ Usage
 
 ```bash
-git clone https://github.com/your-org/your-repo.git
-cd your-repo
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
 make install
-⚙️ Environment Variables
-Define required environment variables in your config module or via Vault. This template does not rely on .env files by default.
-
-Optional: Use Vault, AWS SSM, or environment injection for secure configuration.
-
-🧪 Running Tests
-Run unit tests and type checks using:
-
-bash
-Copy
-Edit
-make test        # Runs pytest
-make lint        # Runs ruff and mypy
-make format      # Auto-formats code with ruff
-All tools are pre-configured via pyproject.toml and pre-commit.
-
-🐳 Docker Support
-This template includes a minimal Dockerfile to containerize the application:
-
-bash
-Copy
-Edit
-docker build -t your-service .
-docker run --rm your-service
-☸️ Kubernetes & GitOps
-A k8s/ folder is provided for ArgoCD-compatible Kubernetes manifests. These can be customized for:
-
-Deployments or Jobs
-
-ConfigMaps and Secrets
-
-Role-based service accounts
-
-Helm or Kustomize overlays
-
-🧰 Built With
-Python
-
-Ruff – Linting & formatting
-
-Mypy – Static type checking
-
-Pytest – Testing
-
-pip-tools – Dependency locking
-
-Docker – Containerization
-
-pre-commit – Git hook automation
-
-🤝 Contributing
-Contributions are welcome! Please submit issues or pull requests to improve this template.
-
-👤 Authors
-Mark Quinn – @mobious999
-
-Jason Qualkenbush – @CosmicQ
-
-📄 License
-Licensed under the Apache License 2.0.
-
-🙏 Acknowledgments
-Inspired by best practices in production-grade Python development, GitOps, and DevSecOps tooling. Special thanks to the open source community.
-
-yaml
-Copy
-Edit
+make run
 ```
+
+Or run directly:
+
+```bash
+python -m app.main
+```
+
+## ⚙️ Environment Variables
+
+| Variable             | Description                                   |
+|----------------------|-----------------------------------------------|
+| `QUEUE_TYPE`         | `rabbitmq` or `sqs`                           |
+| `SYMBOLS`            | Comma-separated list of stock symbols         |
+| `POLLING_INTERVAL`   | Interval between poll cycles (seconds)        |
+| `RATE_LIMIT`         | Requests per second                           |
+| `RETRY_DELAY`        | Delay before retry on failure (seconds)       |
+| `STRUCTURED_LOGGING` | Enable JSON-formatted logs (`true` / `false`) |
+| `VAULT_ADDR`         | Vault server address                          |
+| `VAULT_TOKEN`        | Vault token (or AppRole credentials)          |
+
+## 🧪 Development
+
+```bash
+make lint
+make test
+make build
+make preflight
+```
+
+## 🔐 Security
+
+- Logs redact sensitive values if `REDACT_SENSITIVE_LOGS=true`
+- Vault AppRole authentication with KV v2 secret support
+- CodeQL and Bandit integrated for secure coding practices
+
+## 📦 Deployment
+
+```bash
+docker build -t stock-poller .
+docker run --env-file .env stock-poller
+```
+
+For Kubernetes:
+
+```bash
+make k8s
+```
+
+## 📝 License
+
+Licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
